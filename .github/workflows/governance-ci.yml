@@ -1,0 +1,54 @@
+name: GRC-PROMPT-V1.2-ENFORCER
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validate-governance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ตรวจสอบ Header มาตรฐาน (v1.2)
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -type f -name "*.md" ! -name "README.md" ! -path "./.github/*")
+          
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "--------------------------------------------------"
+            echo "STATUS: WARNING"
+            echo "REASON: NO_MD_FILES_RECORDED"
+            echo "--------------------------------------------------"
+            exit 0
+          fi
+
+          for FILE in "${files[@]}"; do
+            echo "--------------------------------------------------"
+            echo "Auditing Sovereign File: $FILE"
+            echo "--------------------------------------------------"
+            
+            grep -q "^ACK:" "$FILE"    || { echo "STATUS: REJECTED | FILE: $FILE | REASON: MISSING_ACK    | NEXT: เพิ่มบรรทัด ACK"; exit 1; }
+            grep -q "^STATUS:" "$FILE" || { echo "STATUS: REJECTED | FILE: $FILE | REASON: MISSING_STATUS | NEXT: เพิ่มบรรทัด STATUS"; exit 1; }
+            grep -q "^CODE:" "$FILE"   || { echo "STATUS: REJECTED | FILE: $FILE | REASON: MISSING_CODE   | NEXT: เพิ่มบรรทัด CODE"; exit 1; }
+            grep -q "^REASON:" "$FILE" || { echo "STATUS: REJECTED | FILE: $FILE | REASON: MISSING_REASON | NEXT: เพิ่มบรรทัด REASON"; exit 1; }
+            grep -q "^NEXT:" "$FILE"   || { echo "STATUS: REJECTED | FILE: $FILE | REASON: MISSING_NEXT   | NEXT: เพิ่มบรรทัด NEXT"; exit 1; }
+          done
+
+      - name: ตรวจสอบความถูกต้องของข้อมูล (CAS Integrity)
+        run: |
+          if [ -f scripts/verify-cas-integrity.js ]; then
+            node scripts/verify-cas-integrity.js
+          else
+            echo "STATUS: WARNING | REASON: INTEGRITY_SCRIPT_NOT_FOUND | NEXT: DEPLOY_VERIFY_CAS_JS_SOON"
+          fi
+
+
+
+  
