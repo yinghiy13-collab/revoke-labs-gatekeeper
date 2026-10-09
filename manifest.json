@@ -1,0 +1,29 @@
+{
+  "schema": "STE-EVIDENCE-V1",
+  "integrity_level": "SHA-384",
+  "inventory": [
+    {
+      "name": "sbom.spdx.json",
+      "digest": "c641ded827e937fe4e5d5a8a67757f85a631c8dbf72d5f16e5629216487d5ea0"
+    },
+    {
+      "name": "provenance.json",
+      "digest": "c2c81a6ec0e112c36b920346d6b70e95ebbd1e8820518a2307fda5378b9b8e57"
+    },
+    {
+      "name": "cosign.bundle.json",
+      "digest": "b72e473845b0c1287e3bdfa8a08ae5cd6f0cdfe7b4fc1b3c873efa594ccb4a01"
+    },
+    {
+      "name": "rekor_entry.json",
+      "digest": "5dc5c53ed97bcac68268843efc7b0a2bfeaf8adb757fe07fb3f8f35c4dfe8b3f"
+    },
+    {
+      "name": "grype-report.json",
+      "digest": "6318a4c60d1a30fd29e7aeac321bd6a0d1e1e6e09ef0486e70ec89ad372bb497"
+    }
+  ],
+  "hashes": {
+    "inventory_sha384": "06064612b14312a02028993870d625054c764e64d9ed10bd846aa2eba46d8362f724cba27cdba19e3c47090a5ecc2b7e"
+  }
+}

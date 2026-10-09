@@ -1,0 +1,92 @@
+{
+  "gates": [
+    {
+      "id": "G01",
+      "status": "PASS"
+    },
+    {
+      "id": "G02",
+      "status": "PASS"
+    },
+    {
+      "id": "G03",
+      "status": "PASS"
+    },
+    {
+      "id": "G04",
+      "status": "PASS"
+    },
+    {
+      "id": "G05",
+      "status": "PASS"
+    },
+    {
+      "id": "G06",
+      "status": "PASS"
+    },
+    {
+      "id": "G07",
+      "status": "PASS"
+    },
+    {
+      "id": "G08",
+      "status": "PASS"
+    },
+    {
+      "id": "G09",
+      "status": "PASS"
+    },
+    {
+      "id": "G10",
+      "status": "PASS"
+    },
+    {
+      "id": "G11",
+      "status": "PASS"
+    },
+    {
+      "id": "G12",
+      "status": "PASS"
+    }
+  ],
+  "vulnerabilities": {
+    "critical": 0,
+    "high": 0
+  },
+  "attestations": {
+    "slsa_v1": true,
+    "cosign_verified": true,
+    "rekor_entry": "https://rekor.sigstore.dev/api/v1/log/entries/abc123def456",
+    "signer_identity": "https://github.com/yinghiy13-collab/revoke-labs-gatekeeper/.github/workflows/gate-offline.yml@refs/heads/main",
+    "oidc_issuer": "https://token.actions.githubusercontent.com",
+    "builder_id": "https://github.com/actions/runner"
+  },
+  "grype_db": {
+    "built": "2026-10-09T06:33:55.497957Z"
+  },
+  "sbom": {
+    "valid": true
+  },
+  "evidence_files": [
+    {
+      "name": "sbom.spdx.json",
+      "digest": "c641ded827e937fe4e5d5a8a67757f85a631c8dbf72d5f16e5629216487d5ea0"
+    },
+    {
+      "name": "provenance.json",
+      "digest": "c2c81a6ec0e112c36b920346d6b70e95ebbd1e8820518a2307fda5378b9b8e57"
+    },
+    {
+      "name": "cosign.bundle.json",
+      "digest": "b72e473845b0c1287e3bdfa8a08ae5cd6f0cdfe7b4fc1b3c873efa594ccb4a01"
+    },
+    {
+      "name": "rekor_entry.json",
+      "digest": "5dc5c53ed97bcac68268843efc7b0a2bfeaf8adb757fe07fb3f8f35c4dfe8b3f"
+    },
+    {
+      "name": "grype-report.json",
+      "digest": "6318a4c60d1a30fd29e7aeac321bd6a0d1e1e6e09ef0486e70ec89ad372bb497"
+    }
+  ]
+}
