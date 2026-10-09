@@ -1,0 +1,24 @@
+tests/release_gate_test.rego:19:
+data.sovern.release.test_allow_valid: PASS (41.926536ms)
+tests/release_gate_test.rego:20:
+data.sovern.release.test_deny_high_vuln: PASS (37.875902ms)
+tests/release_gate_test.rego:22:
+data.sovern.release.test_deny_missing_gate: PASS (3.886179ms)
+tests/release_gate_test.rego:21:
+data.sovern.release.test_deny_gate_not_run: PASS (10.858947ms)
+tests/release_gate_test.rego:23:
+data.sovern.release.test_deny_missing_file: PASS (35.022667ms)
+tests/release_gate_test.rego:25:
+data.sovern.release.test_deny_bad_rekor: PASS (19.275776ms)
+tests/release_gate_test.rego:24:
+data.sovern.release.test_deny_bad_digest: PASS (51.382184ms)
+tests/release_gate_test.rego:27:
+data.sovern.release.test_deny_cosign_false: PASS (1.404001ms)
+tests/release_gate_test.rego:26:
+data.sovern.release.test_deny_slsa_false: PASS (13.839709ms)
+tests/release_gate_test.rego:28:
+data.sovern.release.test_deny_grype_db_stale: PASS (13.608514ms)
+tests/release_gate_test.rego:29:
+data.sovern.release.test_deny_bad_identity: PASS (21.168504ms)
+--------------------------------------------------------------------------------
+PASS: 11/11

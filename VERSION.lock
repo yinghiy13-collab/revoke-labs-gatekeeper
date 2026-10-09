@@ -1,0 +1,4 @@
+opa: v1.21.1 sha256:[STRIPPED 70 bytes]: v2.2.4
+grype: v0.86.0 db_max_age:120h
+syft: v1.11.0
+seal: NONE -> ALLOW after evidence
