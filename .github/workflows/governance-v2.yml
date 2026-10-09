@@ -1,0 +1,24 @@
+name: governance-v2
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  refresh-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Grype DB
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          grype db update
+          grype db status > GRYPE_DB_STATUS.json
+          echo "built=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+      - name: Commit fresh DB status
+        run: |
+          git config user.name "governance-bot"
+          git config user.email "bot@revoke.labs"
+          git add GRYPE_DB_STATUS.json
+          git commit -m "chore: refresh Grype DB $built [auto]" || echo "no change"
+          git push
