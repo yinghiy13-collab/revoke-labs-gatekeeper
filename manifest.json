@@ -1,6 +1,6 @@
 {
   "schema": "STE-EVIDENCE-V1",
-  "integrity_level": "SHA-384",
+  "integrity_level": "SHA-256",
   "inventory": [
     {
       "name": "sbom.spdx.json",
@@ -24,6 +24,6 @@
     }
   ],
   "hashes": {
-    "inventory_sha384": "06064612b14312a02028993870d625054c764e64d9ed10bd846aa2eba46d8362f724cba27cdba19e3c47090a5ecc2b7e"
+    "inventory_sha256": "bfbefcc4952ccf0ccc2b2e86890357e4811561a69542652fe9f28fd888636a36"
   }
 }
