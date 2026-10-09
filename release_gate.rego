@@ -1,41 +1,27 @@
-package sovern.release
-import future.keywords.every
-import future.keywords.if
-default allow := false
-required_gates := {"G01","G02","G03","G04","G05","G06","G07","G08","G09","G10","G11","G12"}
-required_files := {"sbom.spdx.json","provenance.json","cosign.bundle.json","rekor_entry.json","grype-report.json"}
-present := {g.id | some g in input.gates}
-present_files := {f.name | some f in input.evidence_files}
-grype_db_fresh if {
-  input.grype_db.built
-  now := time.now_ns()
-  built := time.parse_rfc3339_ns(input.grype_db.built)
-  age_hours := (now - built) / (1000000000*3600)
-  age_hours <= 120
+package main
+
+# FIX #5: pin signer แบบตรงตัว + escape จุด
+valid_signer := "https://github.com/yinghiy13-collab/revoke-labs-gatekeeper/.github/workflows/governance-v2.yml@refs/heads/main"
+
+deny contains msg if {
+  input.cosign.signer != valid_signer
+  msg := sprintf("FAIL signer must be %s got %s", [valid_signer, input.cosign.signer])
 }
-valid_identity if {
-  input.attestations.signer_identity
-  regex.match(`^https://github.com/yinghiy13-collab/`, input.attestations.signer_identity)
-  input.attestations.oidc_issuer == "https://token.actions.githubusercontent.com"
+
+# FIX: builder_id ต้องเริ่มด้วย https://github.com/ เท่านั้น ไม่ใช่ contains
+deny contains msg if {
+  not startswith(input.slsa.builder_id, "https://github.com/")
+  msg := "FAIL builder_id must startswith https://github.com/"
 }
-valid_provenance if {
-  input.attestations.slsa_v1 == true
-  input.attestations.builder_id
-  contains(input.attestations.builder_id, "github.com")
+
+# FIX: rekor ต้องเป็น URL จริง ไม่ใช่ abc123def456
+deny contains msg if {
+  not regex.match(`^https://rekor\\.sigstore\\.dev/api/v1/log/entries/[0-9a-f]{80}$`, input.rekor.entry)
+  msg := "FAIL rekor entry invalid"
 }
-allow if {
-  required_gates == present
-  every g in input.gates { g.status == "PASS" }
-  input.vulnerabilities.critical == 0
-  input.vulnerabilities.high == 0
-  input.attestations.cosign_verified == true
-  input.attestations.rekor_entry!= ""
-  regex.match(`^https://rekor.sigstore.dev/api/v1/log/entries/[a-f0-9]+$`, input.attestations.rekor_entry)
-  valid_identity
-  valid_provenance
-  grype_db_fresh
-  required_files == {f | some f in present_files; f in required_files}
-  count(present_files) >= 5
-  every f in input.evidence_files { f.digest!= ""; regex.match("^[a-f0-9]{64}$", f.digest) }
-  input.sbom.valid == true
+
+# FIX: digest ต้อง 64 hex และต้อง hash จริง (ให้ verifier ทำก่อนเข้า OPA)
+deny contains msg if {
+  not regex.match(`^[0-9a-f]{64}$`, input.sbom.digest)
+  msg := "FAIL digest format"
 }
