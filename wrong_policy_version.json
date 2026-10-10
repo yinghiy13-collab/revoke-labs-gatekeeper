@@ -1,0 +1,4 @@
+{
+  "name": "wrong_policy_version",
+  "expect_allow": false
+}
