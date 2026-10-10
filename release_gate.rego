@@ -1,72 +1,90 @@
-package release
+package release_gate
 
 import future.keywords.in
 import future.keywords.contains
 
-# GRC-010/011/012/013 - SLSA L3 + Sigstore + Threshold + Cosign Verify
+default allow := false
 
-default allow = false
-allow = true if count(deny) == 0
-
-# ---------- GRC-010: Signer Pin ----------
-deny contains msg if {
-  input.cosign.signer != "https://github.com/yinghiy13-collab/revoke-labs-gatekeeper/.github/workflows/governance-v2.yml@refs/heads/main"
-  msg := sprintf("GRC-010 FAIL: Signer Pin: %v", [input.cosign.signer])
-}
-
-# ---------- GRC-010: SBOM Digest ----------
-deny contains msg if {
-  not regex.match("^[0-9a-f]{64}$", input.sbom.digest)
-  msg := sprintf("GRC-010 FAIL: SBOM Digest: %v", [input.sbom.digest])
+# ---- GRC-010: Signer Pin + SBOM Digest + Artifact Binding ----
+grc_010 if {
+    input.signer_pinned == true
+    input.signer == "https://github.com/yinghiy13-collab/revoke-labs-gatekeeper/.github/workflows/governance-v2.yml@refs/heads/main"
+    input.sbom_digest_verified == true
+    input.sbom_digest == input.expected_sbom_digest
+    input.artifact_digest != ""
+    input.sbom_artifact_digest == input.artifact_digest
 }
 
-# ---------- GRC-011: Builder ----------
-deny contains msg if {
-  not startswith(input.builder.builder_id, "https://github.com/")
-  msg := sprintf("GRC-011 FAIL: Builder: %v", [input.builder.builder_id])
+# ---- GRC-011: Builder + Rekor Transparency ----
+grc_011 if {
+    input.builder_id != ""
+    input.builder_id == input.expected_builder_id
+    input.rekor_entry_verified == true
+    input.rekor_log_integrity == true
+    input.rekor_inclusion_proof_verified == true
 }
 
-# ---------- GRC-011: Rekor ----------
-deny contains msg if {
-  not regex.match("^https://rekor.sigstore.dev/api/v1/log/entries/[0-9a-f]{80}$", input.rekor.entry_url)
-  msg := sprintf("GRC-011 FAIL: Rekor URL: %v", [input.rekor.entry_url])
+# ---- GRC-012: Threshold >=2 + Expiry 7d ----
+grc_012 if {
+    count(input.signers) >= 2
+    input.expiry_days > 0
+    input.expiry_days <= 7
+    input.threshold_enforced == true
 }
 
-# ---------- GRC-012: Threshold ----------
-deny contains msg if {
-  count(input.cosign.signers) < 2
-  msg := sprintf("GRC-012 FAIL: Threshold <2 got %v", [count(input.cosign.signers)])
-}
-deny contains msg if {
-  not contains(input.provenance.ref, "refs/heads/main")
-  msg := sprintf("GRC-012 FAIL: Only main allowed: %v", [input.provenance.ref])
-}
-
-# ---------- GRC-012: Expiry 7d ----------
-deny contains msg if {
-  (time.now_ns() - time.parse_rfc3339_ns(input.rekor.integrated_time)) > 7*24*60*60*1000000000
-  msg := "GRC-012 FAIL: Rekor expired >7d"
-}
-deny contains msg if {
-  input.sbom.generated_at
-  (time.now_ns() - time.parse_rfc3339_ns(input.sbom.generated_at)) > 7*24*60*60*1000000000
-  msg := "GRC-012 FAIL: SBOM expired >7d"
+# ---- GRC-013: Cosign + OPA + Evidence + Grype 0 ----
+grc_013 if {
+    input.cosign_bundle_verified == true
+    input.cosign_identity_regex_verified == true
+    input.cosign_issuer == "https://token.actions.githubusercontent.com"
+    input.opa_eval == "PASS"
+    input.opa_test_v == "PASS"
+    input.evidence_sha256_exists == true
+    input.evidence_sha256_verified == true
+    input.grype_critical == 0
+    input.grype_count_verified == true
 }
 
-# ---------- GRC-013: Cosign Verification + Policy Audit ----------
-deny contains msg if {
-  not input.cosign.bundle_verified
-  msg := "GRC-013 FAIL: cosign.bundle.json not verified"
+# ---- SLSA L3 + Sigstore - Bound to artifact ----
+slsa_l3_verified if {
+    input.provenance_verified == true
+    input.provenance_builder_id == input.builder_id
+    input.provenance_artifact_digest == input.artifact_digest
+    input.slsa_level == "SLSA_L3"
+    input.sigstore_verified == true
 }
-deny contains msg if {
-  input.evidence.opa_eval != "PASS"
-  msg := sprintf("GRC-013 FAIL: OPA_EVAL.log != PASS got %v", [input.evidence.opa_eval])
+
+# ---- FINAL GATE: AND - ทุก GRC ต้องผ่านพร้อมกัน ----
+allow if {
+    grc_010
+    grc_011
+    grc_012
+    grc_013
+    slsa_l3_verified
 }
+
+# ---- DENY MESSAGES ครบทุก GRC ----
 deny contains msg if {
-  not input.evidence.sha256_log_exists
-  msg := "GRC-013 FAIL: EVIDENCE_SHA256.log missing"
+    not grc_010
+    msg := "GRC-010 FAILED: Signer pin or SBOM digest mismatch or artifact not bound"
 }
+
 deny contains msg if {
-  input.grype.critical_count > 0
-  msg := sprintf("GRC-013 FAIL: GRYPE CRITICAL %v found", [input.grype.critical_count])
+    not grc_011
+    msg := "GRC-011 FAILED: Builder or Rekor transparency not verified"
+}
+
+deny contains msg if {
+    not grc_012
+    msg := "GRC-012 FAILED: Threshold <2 or Expiry >7d"
+}
+
+deny contains msg if {
+    not grc_013
+    msg := "GRC-013 FAILED: Cosign/OPA/Evidence/Grype verification failed"
+}
+
+deny contains msg if {
+    not slsa_l3_verified
+    msg := "SLSA_L3/Sigstore FAILED: Attestation not verified or not bound to artifact"
 }
