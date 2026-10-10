@@ -18,14 +18,14 @@ jobs:
       - name: Install pinned tools with SHA verification
         run: |
           echo "=== Verify cosign ==="
-          curl -sL -o cosign https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-linux-amd64
+          curl -SL -o cosign https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-linux-amd64
           echo "4629c757b7618056f8ddd7e2625ae9fdd94c0372a65049520bc7d9df9efc7f71 cosign" | sha256sum -c -
           chmod +x cosign
           sudo mv cosign /usr/local/bin/cosign
           cosign version
 
           echo "=== Verify opa ==="
-          curl -sL -o opa https://github.com/open-policy-agent/opa/releases/download/v1.21.1/opa_linux_amd64_static
+          curl -SL -o opa https://github.com/open-policy-agent/opa/releases/download/v1.21.1/opa_linux_amd64_static
           echo "668506eb17a2eaa1fce6cc0d1f42ef85125d4ac5bda5fc74d1152d0c77145031 opa" | sha256sum -c -
           chmod +x opa
           sudo mv opa /usr/local/bin/opa
@@ -69,3 +69,12 @@ jobs:
           cosign sign-blob evidence/metadata.json --bundle evidence/cosign.bundle.json --yes
           ls -lh evidence/cosign.bundle.json
           cosign verify-blob --bundle evidence/cosign.bundle.json --certificate-identity-regexp="^https://github.com/.*/\.github/workflows/governance-v2.yml@.*" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" evidence/metadata.json
+
+      - name: Commit bundle to evidence
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add evidence/cosign.bundle.json
+          git commit -m "seal: add cosign.bundle.json for dfdd7ea [skip ci]" || echo "no changes to commit"
+          git push
