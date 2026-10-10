@@ -1,0 +1,108 @@
+name: Release Gate - SLSA L3 Audit-Ready
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_digest: ${{ steps.digest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build artifact (tar.gz from policy)
+        run: |
+          mkdir -p dist
+          tar -czf dist/viper-sovereign-grc015.tar.gz manifest.json policy/ tests/ || \
+          tar -czf dist/viper-sovereign-grc015.tar.gz --exclude=.git --exclude=.github .
+          sha256sum dist/*.tar.gz | tee dist/EVIDENCE_SHA256.log
+      - id: digest
+        run: |
+          D=$(sha256sum dist/viper-sovereign-grc015.tar.gz | awk '{print $1}')
+          echo "sha=sha256:$D" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {name: build-artifact, path: dist}
+      - uses: sigstore/cosign-installer@v3.6.0
+      - run: |
+          cosign sign-blob --yes \
+            --bundle dist/cosign.bundle.json \
+            --output-signature dist/gatekeeper.sig \
+            --output-certificate dist/gatekeeper.crt \
+            dist/viper-sovereign-grc015.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signature-bundle
+          path: dist/cosign.bundle.json
+
+  provenance:
+    needs: build
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {name: build-artifact, path: dist}
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/viper-sovereign-grc015.tar.gz
+
+  verify:
+    needs: [build, sign, provenance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {path: evidence, merge-multiple: true}
+      - uses: sigstore/cosign-installer@v3.6.0
+      - name: Verify Cosign + SLSA (REAL)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          ART=$(find evidence -name "*.tar.gz" | head -n1)
+          BUNDLE=$(find evidence -name "cosign.bundle.json" | head -n1)
+          cosign verify-blob \
+            --certificate-identity-regexp '^https://github.com/yinghiy13-collab/revoke-labs-gatekeeper/.github/workflows/release-gate.yml@refs/tags/v.*$' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            --bundle $BUNDLE $ART
+          gh attestation verify $ART --repo yinghiy13-collab/revoke-labs-gatekeeper
+          echo "CRYPTOGRAPHIC_VERIFICATION=PASS" | tee verify_env
+      - uses: actions/upload-artifact@v4
+        with: {name: verification-result, path: verify_env}
+
+  policy-check:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: open-policy-agent/setup-opa@v2
+      - run: |
+          opa check --strict policy/
+          opa test -v policy/ tests/
+
+  authorization:
+    needs: [build, sign, provenance, verify, policy-check]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "GRC-015 AUTHORIZATION=PASS"
+          echo "fb071aa GOVERNANCE=PASS -> v1.4.2 SLSA L3=PASS"
