@@ -1,4 +1,5 @@
 ACK: yinghiy13-collab - Sovereign ACK for GRC-010/011 [FIX#5] - GRC-PROMPT-V1.2
+STATUS: APPROVED
 # revoke-labs-gatekeeper - ROADMAP
 
 > Release Gatekeeper แบบ SLSA L3 + Sigstore - ด่านสุดท้ายก่อน production
