@@ -1,6 +1,7 @@
 ACK: yinghiy13-collab - Sovereign ACK for GRC-010/011 [FIX#5] - GRC-PROMPT-V1.2
 STATUS: APPROVED
 CODE: GRC-010/011-ROADMAP
+REASON: Sovereign documentation for GRC-010/011 gatekeeper release flow - SLSA L3 compliance
 # revoke-labs-gatekeeper - ROADMAP
 
 > Release Gatekeeper แบบ SLSA L3 + Sigstore - ด่านสุดท้ายก่อน production
@@ -38,7 +39,7 @@ CODE: GRC-010/011-ROADMAP
 - `main` is protected branch
 
 ### Stats
-- Open: 3 PR (#14 bot seal, #15 FIX#5 ✅, #16 docs)
+- Open: 3 PR (#14 bot seal, #15 FIX#5 ✅ 2/2, #16 docs)
 - Closed: 13 PR
 
 ## Next: GRC-010, GRC-011 Done -> GRC-012: Threshold + Expiry
